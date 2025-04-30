@@ -74,6 +74,25 @@ func TestBooks(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
+	t.Run("ignores archived books", func(t *testing.T) {
+		ctx := context.Background()
+		startingBooks, err := testQueries.Books(ctx)
+		require.Nil(t, err)
+
+		_, err = testQueries.ArchiveBook(ctx, ArchiveBookParams{
+			ID: 1,
+			ArchivedAt: sql.NullTime{
+				Time:  time.Now().UTC(),
+				Valid: true,
+			},
+		})
+		require.Nil(t, err)
+
+		books, err := testQueries.Books(ctx)
+		assert.Equal(t, len(books), len(startingBooks)-1)
+		assert.Nil(t, err)
+	})
+
 	t.Run("returns an error", func(t *testing.T) {
 		t.Skip()
 	})

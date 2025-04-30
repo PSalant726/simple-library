@@ -14,6 +14,7 @@ LIMIT 1;
 -- name: Books :many
 SELECT *
 FROM books
+WHERE archived_at IS NULL
 ORDER BY id;
 --
 

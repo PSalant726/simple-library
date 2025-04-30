@@ -69,6 +69,7 @@ const books = `-- name: Books :many
 
 SELECT id, isbn, title, author, description, checked_out_at, created_at, updated_at, archived_at
 FROM books
+WHERE archived_at IS NULL
 ORDER BY id
 `
 
