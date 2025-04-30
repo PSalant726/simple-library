@@ -1,0 +1,47 @@
+CREATE TABLE IF NOT EXISTS books (
+    id INTEGER PRIMARY KEY,
+    isbn TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL,
+    description TEXT,
+    checked_out_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    archived_at TIMESTAMP
+);
+--
+CREATE TRIGGER update_books_updated_at
+AFTER
+UPDATE ON books FOR EACH ROW
+    WHEN OLD.updated_at != NEW.updated_at BEGIN
+UPDATE books
+SET updated_at = CURRENT_TIMESTAMP
+WHERE id = OLD.id;
+END;
+--
+CREATE INDEX idx_books_isbn ON books(isbn);
+CREATE INDEX idx_books_title ON books(title);
+CREATE INDEX idx_books_author ON books(author);
+CREATE INDEX idx_books_checked_out_at ON books(checked_out_at);
+--
+--
+CREATE TABLE IF NOT EXISTS book_events (
+    id INTEGER PRIMARY KEY,
+    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+    action TEXT NOT NULL CHECK(action IN ('checkin', 'checkout')),
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+--
+CREATE TRIGGER update_book_events_updated_at
+AFTER
+UPDATE ON book_events FOR EACH ROW
+    WHEN OLD.updated_at != NEW.updated_at BEGIN
+UPDATE book_events
+SET updated_at = CURRENT_TIMESTAMP
+WHERE id = OLD.id;
+END;
+--
+CREATE INDEX idx_book_events_book_id ON book_events(book_id);
+CREATE INDEX idx_book_events_timestamp ON book_events(timestamp);
