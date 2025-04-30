@@ -8,6 +8,7 @@ import (
 
 	"github.com/PSalant726/simple-library/internal/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestArchiveBook(t *testing.T) {
@@ -61,12 +62,15 @@ func TestBook(t *testing.T) {
 func TestBooks(t *testing.T) {
 	t.Run("returns all books", func(t *testing.T) {
 		ctx := context.Background()
+		startingBooks, err := testQueries.Books(ctx)
+		require.Nil(t, err)
+
 		for range 10 {
 			insertRandomBook(t, ctx)
 		}
 
 		books, err := testQueries.Books(ctx)
-		assert.GreaterOrEqual(t, len(books), 10)
+		assert.Equal(t, len(books), len(startingBooks)+10)
 		assert.Nil(t, err)
 	})
 
@@ -87,10 +91,10 @@ func TestCheckInBook(t *testing.T) {
 				Valid: true,
 			},
 		})
-		assert.Equal(t, testBook.ID, checkedOutBook.ID)
-		assert.False(t, checkedOutBook.CheckedOutAt.Time.IsZero())
-		assert.True(t, checkedOutBook.CheckedOutAt.Valid)
-		assert.Nil(t, err)
+		require.Equal(t, testBook.ID, checkedOutBook.ID)
+		require.False(t, checkedOutBook.CheckedOutAt.Time.IsZero())
+		require.True(t, checkedOutBook.CheckedOutAt.Valid)
+		require.Nil(t, err)
 
 		checkedInBook, err := testQueries.CheckInBook(ctx, checkedOutBook.ID)
 		assert.Equal(t, testBook.ID, checkedInBook.ID)
@@ -145,8 +149,8 @@ func TestCreateBook(t *testing.T) {
 	t.Run("returns an error", func(t *testing.T) {
 		ctx := context.Background()
 		existingBooks, err := testQueries.Books(ctx)
-		assert.NotZero(t, len(existingBooks))
-		assert.Nil(t, err)
+		require.NotZero(t, len(existingBooks))
+		require.Nil(t, err)
 
 		testBook, err := testQueries.CreateBook(ctx, CreateBookParams{
 			Isbn:   existingBooks[0].Isbn,

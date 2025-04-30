@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBookEvent(t *testing.T) {
@@ -31,13 +32,16 @@ func TestBookEvent(t *testing.T) {
 func TestBookEvents(t *testing.T) {
 	t.Run("returns all book events", func(t *testing.T) {
 		ctx := context.Background()
+		startingBookEvents, err := testQueries.BookEvents(ctx)
+		require.Nil(t, err)
+
 		randomBook := insertRandomBook(t, ctx)
 		for range 10 {
 			insertRandomBookEvent(t, ctx, randomBook.ID)
 		}
 
 		bookEvents, err := testQueries.BookEvents(ctx)
-		assert.GreaterOrEqual(t, len(bookEvents), 10)
+		assert.Equal(t, len(bookEvents), len(startingBookEvents)+10)
 		assert.Nil(t, err)
 	})
 
@@ -74,8 +78,8 @@ func TestCreateBookEvent(t *testing.T) {
 	t.Run("returns an error", func(t *testing.T) {
 		ctx := context.Background()
 		existingBookEvents, err := testQueries.BookEvents(ctx)
-		assert.NotZero(t, len(existingBookEvents))
-		assert.Nil(t, err)
+		require.NotZero(t, len(existingBookEvents))
+		require.Nil(t, err)
 
 		testBookEvent, err := testQueries.CreateBookEvent(ctx, CreateBookEventParams{
 			BookID:    1_000_000,
@@ -128,7 +132,7 @@ func TestUpdateBookEvent(t *testing.T) {
 		assert.Nil(t, err)
 
 		actual, err := testQueries.BookEvent(ctx, testBookEvent.ID)
-		assert.Nil(t, err)
+		require.Nil(t, err)
 
 		t.Run("fields included in the provided params", func(t *testing.T) {
 			assert.NotEqual(t, testBookEvent.Action, actual.Action)
