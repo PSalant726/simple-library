@@ -8,4 +8,7 @@ migrate-up:
 migration:
 	migrate create -ext sql -dir db/migrations $(filter-out $@,$(MAKECMDGOALS))
 
-.PHONY: migrate-down migrate-up migration
+sqlc:
+	sqlc generate
+
+.PHONY: migrate-down migrate-up migration sqlc
