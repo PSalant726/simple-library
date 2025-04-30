@@ -11,4 +11,7 @@ migration:
 sqlc:
 	sqlc generate
 
-.PHONY: migrate-down migrate-up migration sqlc
+test:
+	go test -count=1 -cover -race ./...
+
+.PHONY: migrate-down migrate-up migration sqlc test
