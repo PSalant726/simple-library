@@ -1,6 +1,13 @@
 -- name: CreateBook :one
-INSERT INTO books (isbn, title, author, description)
-VALUES (?1, ?2, ?3, ?4)
+INSERT INTO books (
+        isbn,
+        title,
+        author,
+        description,
+        checked_out_at,
+        archived_at
+    )
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 RETURNING *;
 --
 

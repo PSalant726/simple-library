@@ -254,6 +254,8 @@ func insertRandomBook(t *testing.T, ctx context.Context) Book {
 			String: util.RandomString(30),
 			Valid:  true,
 		},
+		CheckedOutAt: sql.NullTime{},
+		ArchivedAt:   sql.NullTime{},
 	}
 
 	now := time.Now().UTC()

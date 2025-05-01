@@ -162,16 +162,25 @@ func (q *Queries) CheckOutBook(ctx context.Context, arg CheckOutBookParams) (Boo
 }
 
 const createBook = `-- name: CreateBook :one
-INSERT INTO books (isbn, title, author, description)
-VALUES (?1, ?2, ?3, ?4)
+INSERT INTO books (
+        isbn,
+        title,
+        author,
+        description,
+        checked_out_at,
+        archived_at
+    )
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 RETURNING id, isbn, title, author, description, checked_out_at, created_at, updated_at, archived_at
 `
 
 type CreateBookParams struct {
-	Isbn        string         `json:"isbn"`
-	Title       string         `json:"title"`
-	Author      string         `json:"author"`
-	Description sql.NullString `json:"description"`
+	Isbn         string         `json:"isbn"`
+	Title        string         `json:"title"`
+	Author       string         `json:"author"`
+	Description  sql.NullString `json:"description"`
+	CheckedOutAt sql.NullTime   `json:"checked_out_at"`
+	ArchivedAt   sql.NullTime   `json:"archived_at"`
 }
 
 func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (Book, error) {
@@ -180,6 +189,8 @@ func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (Book, e
 		arg.Title,
 		arg.Author,
 		arg.Description,
+		arg.CheckedOutAt,
+		arg.ArchivedAt,
 	)
 	var i Book
 	err := row.Scan(
