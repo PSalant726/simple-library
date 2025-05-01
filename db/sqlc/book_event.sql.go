@@ -157,18 +157,24 @@ func (q *Queries) DeleteBookEvent(ctx context.Context, id int64) (BookEvent, err
 const updateBookEvent = `-- name: UpdateBookEvent :one
 
 UPDATE book_events
-SET book_id = CASE
-        WHEN CAST(?3 AS integer) != 0 THEN ?3
-        ELSE book_id
-    END,
-    action = CASE
-        WHEN CAST(?4 AS text) != '' THEN ?4
-        ELSE action
-    END,
-    timestamp = CASE
-        WHEN CAST(?5 AS bool) THEN ?2
-        ELSE timestamp
-    END
+SET book_id = (
+        CASE
+            WHEN CAST(?3 AS integer) != 0 THEN ?3
+            ELSE book_id
+        END
+    ),
+    action = (
+        CASE
+            WHEN CAST(?4 AS text) != '' THEN ?4
+            ELSE action
+        END
+    ),
+    timestamp = (
+        CASE
+            WHEN CAST(?5 AS bool) THEN ?2
+            ELSE timestamp
+        END
+    )
 WHERE id = ?1
 RETURNING id, book_id, "action", timestamp, created_at, updated_at
 `

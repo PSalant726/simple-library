@@ -26,18 +26,24 @@ ORDER BY timestamp DESC;
 
 -- name: UpdateBookEvent :one
 UPDATE book_events
-SET book_id = CASE
-        WHEN CAST(:book_id AS integer) != 0 THEN :book_id
-        ELSE book_id
-    END,
-    action = CASE
-        WHEN CAST(:action AS text) != '' THEN :action
-        ELSE action
-    END,
-    timestamp = CASE
-        WHEN CAST(:should_update_timestamp AS bool) THEN ?2
-        ELSE timestamp
-    END
+SET book_id = (
+        CASE
+            WHEN CAST(:book_id AS integer) != 0 THEN :book_id
+            ELSE book_id
+        END
+    ),
+    action = (
+        CASE
+            WHEN CAST(:action AS text) != '' THEN :action
+            ELSE action
+        END
+    ),
+    timestamp = (
+        CASE
+            WHEN CAST(:should_update_timestamp AS bool) THEN ?2
+            ELSE timestamp
+        END
+    )
 WHERE id = ?1
 RETURNING *;
 --

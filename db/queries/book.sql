@@ -27,22 +27,30 @@ ORDER BY id;
 
 -- name: UpdateBook :one
 UPDATE books
-SET isbn = CASE
-        WHEN CAST(:isbn AS text) != '' THEN :isbn
-        ELSE isbn
-    END,
-    title = CASE
-        WHEN CAST(:title AS text) != '' THEN :title
-        ELSE title
-    END,
-    author = CASE
-        WHEN CAST(:author AS text) != '' THEN :author
-        ELSE author
-    END,
-    description = CASE
-        WHEN CAST(:description AS text) != '' THEN :description
-        ELSE description
-    END
+SET isbn = (
+        CASE
+            WHEN CAST(:isbn AS text) != '' THEN :isbn
+            ELSE isbn
+        END
+    ),
+    title = (
+        CASE
+            WHEN CAST(:title AS text) != '' THEN :title
+            ELSE title
+        END
+    ),
+    author = (
+        CASE
+            WHEN CAST(:author AS text) != '' THEN :author
+            ELSE author
+        END
+    ),
+    description = (
+        CASE
+            WHEN CAST(:description AS text) != '' THEN :description
+            ELSE description
+        END
+    )
 WHERE id = ?1
 RETURNING *;
 --

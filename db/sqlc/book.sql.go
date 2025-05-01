@@ -234,22 +234,30 @@ func (q *Queries) DeleteBook(ctx context.Context, id int64) (Book, error) {
 const updateBook = `-- name: UpdateBook :one
 
 UPDATE books
-SET isbn = CASE
-        WHEN CAST(?2 AS text) != '' THEN ?2
-        ELSE isbn
-    END,
-    title = CASE
-        WHEN CAST(?3 AS text) != '' THEN ?3
-        ELSE title
-    END,
-    author = CASE
-        WHEN CAST(?4 AS text) != '' THEN ?4
-        ELSE author
-    END,
-    description = CASE
-        WHEN CAST(?5 AS text) != '' THEN ?5
-        ELSE description
-    END
+SET isbn = (
+        CASE
+            WHEN CAST(?2 AS text) != '' THEN ?2
+            ELSE isbn
+        END
+    ),
+    title = (
+        CASE
+            WHEN CAST(?3 AS text) != '' THEN ?3
+            ELSE title
+        END
+    ),
+    author = (
+        CASE
+            WHEN CAST(?4 AS text) != '' THEN ?4
+            ELSE author
+        END
+    ),
+    description = (
+        CASE
+            WHEN CAST(?5 AS text) != '' THEN ?5
+            ELSE description
+        END
+    )
 WHERE id = ?1
 RETURNING id, isbn, title, author, description, checked_out_at, created_at, updated_at, archived_at
 `
