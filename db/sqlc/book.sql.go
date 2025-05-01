@@ -257,7 +257,8 @@ SET isbn = (
             WHEN CAST(?5 AS text) != '' THEN ?5
             ELSE description
         END
-    )
+    ),
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = ?1
 RETURNING id, isbn, title, author, description, checked_out_at, created_at, updated_at, archived_at
 `

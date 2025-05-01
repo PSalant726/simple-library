@@ -174,7 +174,8 @@ SET book_id = (
             WHEN CAST(?5 AS bool) THEN ?2
             ELSE timestamp
         END
-    )
+    ),
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = ?1
 RETURNING id, book_id, "action", timestamp, created_at, updated_at
 `

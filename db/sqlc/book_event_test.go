@@ -124,6 +124,7 @@ func TestUpdateBookEvent(t *testing.T) {
 			newBookEventAction = "checkout"
 		}
 
+		time.Sleep(time.Second)
 		updatedBookEvent, err := testQueries.UpdateBookEvent(ctx, UpdateBookEventParams{
 			ID:     testBookEvent.ID,
 			Action: newBookEventAction,
@@ -139,10 +140,15 @@ func TestUpdateBookEvent(t *testing.T) {
 			assert.Equal(t, newBookEventAction, actual.Action)
 		})
 
+		t.Run("the updated_at field", func(t *testing.T) {
+			assert.True(t, actual.UpdatedAt.After(testBookEvent.UpdatedAt))
+		})
+
 		t.Run("does not modify fields omitted in the provided params", func(t *testing.T) {
 			assert.Equal(t, testBookEvent.ID, actual.ID)
 			assert.Equal(t, testBookEvent.BookID, actual.BookID)
 			assert.Equal(t, testBookEvent.Timestamp, actual.Timestamp)
+			assert.Equal(t, testBookEvent.CreatedAt, actual.CreatedAt)
 		})
 	})
 

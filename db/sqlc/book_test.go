@@ -79,8 +79,9 @@ func TestBooks(t *testing.T) {
 		startingBooks, err := testQueries.Books(ctx)
 		require.Nil(t, err)
 
+		archivedBook := insertRandomBook(t, ctx)
 		_, err = testQueries.ArchiveBook(ctx, ArchiveBookParams{
-			ID: 1,
+			ID: archivedBook.ID,
 			ArchivedAt: sql.NullTime{
 				Time:  time.Now().UTC(),
 				Valid: true,
@@ -89,7 +90,7 @@ func TestBooks(t *testing.T) {
 		require.Nil(t, err)
 
 		books, err := testQueries.Books(ctx)
-		assert.Equal(t, len(books), len(startingBooks)-1)
+		assert.Equal(t, len(books), len(startingBooks))
 		assert.Nil(t, err)
 	})
 
@@ -211,6 +212,7 @@ func TestUpdateBook(t *testing.T) {
 		ctx := context.Background()
 		testBook := insertRandomBook(t, ctx)
 
+		time.Sleep(time.Second)
 		updatedBook, err := testQueries.UpdateBook(ctx, UpdateBookParams{
 			ID:     testBook.ID,
 			Author: "phil",
@@ -226,10 +228,15 @@ func TestUpdateBook(t *testing.T) {
 			assert.Equal(t, "phil", actual.Author)
 		})
 
+		t.Run("the updated_at field", func(t *testing.T) {
+			assert.True(t, actual.UpdatedAt.After(testBook.UpdatedAt))
+		})
+
 		t.Run("does not modify fields omitted in the provided params", func(t *testing.T) {
 			assert.Equal(t, testBook.Isbn, actual.Isbn)
 			assert.Equal(t, testBook.Title, actual.Title)
 			assert.Equal(t, testBook.Description, actual.Description)
+			assert.Equal(t, testBook.CreatedAt, actual.CreatedAt)
 		})
 	})
 
