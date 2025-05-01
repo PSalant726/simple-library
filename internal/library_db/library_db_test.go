@@ -76,7 +76,7 @@ func TestLibraryDB_Start(t *testing.T) {
 	t.Run("sets the db field", func(t *testing.T) {
 		withTempDB(t, func(d *LibraryDB) {
 			assert.Nil(t, d.Start())
-			assert.IsType(t, &sql.DB{}, d.db)
+			assert.IsType(t, &sql.DB{}, d.DB)
 		})
 	})
 
@@ -129,12 +129,12 @@ func withTempDB(t *testing.T, test func(*LibraryDB)) {
 	testDB, err := New(tmpDB.Name(), pathMigrations)
 	require.Nil(t, err)
 	defer func() {
-		if testDB.db == nil {
+		if testDB.DB == nil {
 			return
 		}
 
-		if err := testDB.db.Ping(); err != nil {
-			testDB.db.Close()
+		if err := testDB.DB.Ping(); err != nil {
+			testDB.DB.Close()
 		}
 	}()
 

@@ -25,7 +25,7 @@ const (
 type LibraryDB struct {
 	*db.Queries
 
-	db                *sql.DB
+	DB                *sql.DB
 	pathDBFile        string
 	pathMigrationsDir string
 
@@ -71,7 +71,7 @@ func (l *LibraryDB) Start() error {
 	}
 
 	l.Queries = db.New(conn)
-	l.db = conn
+	l.DB = conn
 
 	if err := l.migrateUp(); err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
@@ -81,7 +81,7 @@ func (l *LibraryDB) Start() error {
 }
 
 func (l LibraryDB) Stop() error {
-	if err := l.db.Close(); err != nil {
+	if err := l.DB.Close(); err != nil {
 		return fmt.Errorf("failed to close database connection: %w", err)
 	}
 
@@ -110,7 +110,7 @@ func (l LibraryDB) dataSourceName() string {
 
 func (l LibraryDB) migrateUp() error {
 	driver, err := sqlite.WithInstance(
-		l.db,
+		l.DB,
 		&sqlite.Config{DatabaseName: l.name},
 	)
 	if err != nil {
