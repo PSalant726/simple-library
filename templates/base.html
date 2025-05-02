@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Library</title>
+    <link rel="icon" href="https://img.icons8.com/?size=48&id=PL4OHdJ2n5XD&format=png" sizes="any" type="image/png">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.body.addEventListener("htmx:responseError", function(event) {
+                const target = document.querySelector("#add-book-error");
+                const response = event.detail.xhr.responseText;
+
+                if (target) {
+                    target.innerHTML = response;
+                }
+            });
+
+            document.body.addEventListener("htmx:afterRequest", function(event) {
+                if (event.detail.successful) {
+                    const target = document.querySelector("#add-book-error");
+                    if (target) {
+                        target.innerHTML = "";
+                    }
+                }
+            });
+        });
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 0.5em;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        form {
+            margin-bottom: 1em;
+        }
+
+        input[type="text"],
+        input[type="submit"] {
+            padding: 0.5em;
+        }
+
+        .error {
+            color: red;
+            margin-top: 0.5em;
+            margin-bottom: 1em;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        {{block "content" .}}{{end}}
+    </main>
+</body>
+
+</html>

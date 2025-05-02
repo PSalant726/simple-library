@@ -92,5 +92,6 @@ func (s *Server) addRoutes() {
 	mux := http.NewServeMux()
 	s.addBooksRoutes(mux)
 	s.addBookEventsRoutes(mux)
+	s.addFrontEndRoutes(mux)
 	s.Server.Handler = assignRequestID(logRequests(mux))
 }

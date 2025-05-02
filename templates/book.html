@@ -1,0 +1,28 @@
+<tr id="book-{{.ID}}">
+    <td>{{.Title}}</td>
+    <td>{{.Author}}</td>
+    <td>{{.Isbn}}</td>
+    <td>{{.Description.String}}</td>
+    <td>
+        {{if .CheckedOutAt.Valid}}
+        Checked Out
+        {{else}}
+        Available
+        {{end}}
+    </td>
+    <td>
+        {{if .CheckedOutAt.Valid}}
+        <button hx-patch="/ui/books/{{.ID}}/check-in" hx-target="#book-{{.ID}}" hx-swap="outerHTML">
+            Check In
+        </button>
+        {{else}}
+        <button hx-patch="/ui/books/{{.ID}}/check-out" hx-target="#book-{{.ID}}" hx-swap="outerHTML">
+            Check Out
+        </button>
+        {{end}}
+        <button hx-delete="/ui/books/{{.ID}}" hx-target="#book-{{.ID}}" hx-swap="outerHTML"
+            hx-confirm="Are you sure you want to delete this book?">
+            Delete
+        </button>
+    </td>
+</tr>

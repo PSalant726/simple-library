@@ -14,7 +14,10 @@ import (
 
 const (
 	headerKeyContentType       = "Content-Type"
+	headerKeyHXSwap            = "HX-Swap"
+	headerKeyHXTarget          = "HX-Target"
 	headerValueApplicationJSON = "application/json"
+	headerValueTextHTML        = "text/html"
 
 	maxRequestBodySize = 1 << 20 // 1 MB
 )
@@ -34,6 +37,28 @@ func handleSQLiteBookError(w http.ResponseWriter, err *sqlite.Error, book Book) 
 	}
 
 	respondWithJSON(w, http.StatusBadRequest, resp)
+}
+
+func handleSQLiteBookUIError(w http.ResponseWriter, err *sqlite.Error, book Book) {
+	w.Header()[headerKeyHXTarget] = []string{"#add-book-error"}
+	w.Header()[headerKeyHXSwap] = []string{"innerHTML"}
+	w.Header().Set(headerKeyContentType, headerValueTextHTML)
+	w.WriteHeader(http.StatusBadRequest)
+
+	messagef := `<div id="add-book-error" class="error" hx-swap-oob="true">%s</div>`
+
+	var message string
+	switch err.Code() {
+	case sqlite3.SQLITE_CONSTRAINT_CHECK:
+		message = fmt.Sprintf(messagef, "ISBN, Title, and Author must not be empty.")
+	case sqlite3.SQLITE_CONSTRAINT_UNIQUE:
+		message = fmt.Sprintf(messagef, "A book with ISBN %s already exists.")
+		message = fmt.Sprintf(message, book.Isbn)
+	default:
+		message = fmt.Sprintf(messagef, "An unexpected error occurred.")
+	}
+
+	w.Write([]byte(message))
 }
 
 func handleSQLiteBookEventError(w http.ResponseWriter, err *sqlite.Error, bookEvent BookEvent) {

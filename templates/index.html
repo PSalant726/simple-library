@@ -1,0 +1,58 @@
+{{define "content"}}
+<h1>Simple Library</h1>
+
+<form id="add-book-form" hx-post="/ui/books" hx-target="#book-list tbody" hx-swap="beforeend">
+    <input type="text" name="isbn" placeholder="ISBN" required>
+    <input type="text" name="title" placeholder="Title" required>
+    <input type="text" name="author" placeholder="Author" required>
+    <input type="text" name="description" placeholder="Description (optional)">
+    <button type="submit">Add Book</button>
+    <div class="error" id="add-book-error"></div>
+</form>
+
+<table id="book-list">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>ISBN</th>
+            <th>Description</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Books}}
+        <tr id="book-{{.ID}}">
+            <td>{{.Title}}</td>
+            <td>{{.Author}}</td>
+            <td>{{.Isbn}}</td>
+            <td>{{.Description.String}}</td>
+            <td>
+                {{if .CheckedOutAt.Valid}}
+                Checked Out
+                {{else}}
+                Available
+                {{end}}
+            </td>
+            <td>
+                {{if .CheckedOutAt.Valid}}
+                <button hx-patch="/ui/books/{{.ID}}/check-in" hx-target="#book-{{.ID}}" hx-swap="outerHTML">
+                    Check In
+                </button>
+                {{else}}
+                <button hx-patch="/ui/books/{{.ID}}/check-out" hx-target="#book-{{.ID}}" hx-swap="outerHTML">
+                    Check Out
+                </button>
+                {{end}}
+                <button hx-delete="/ui/books/{{.ID}}" hx-target="#book-{{.ID}}" hx-swap="outerHTML"
+                    hx-confirm="Are you sure?">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
+
+{{template "base.html" .}}
