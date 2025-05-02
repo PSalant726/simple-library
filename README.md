@@ -314,6 +314,53 @@ All error responses follow this format:
 }
 ```
 
+## UI Documentation
+
+### Overview
+
+The front-end of the Simple Library project provides a user-friendly interface for managing books and viewing their check-in/check-out history. It is built using server-side templates and leverages [HTMX](https://htmx.org/) for dynamic interactions without requiring a full page reload.
+
+### Features
+
+- **Book Management**: Add, update, delete, check-in, and check-out books directly from the interface.
+- **Dynamic Updates**: Use HTMX to dynamically update parts of the page without reloading.
+- **Checkout Log**: View a detailed log of all book check-in and check-out events.
+
+### Routes
+
+The front-end interacts with the server through the following routes:
+
+#### `/` (Root)
+
+**Method**: `GET`
+**Description**: Displays the main page with the list of books and the add book form.
+**Template**: index.html
+
+#### `/check-out-log`
+
+**Method**: `GET`
+**Description**: Displays the checkout log, showing all check-in and check-out events.
+**Template**: check_out_log.html
+
+### Error Handling
+
+Error messages are displayed dynamically using HTMX. For example:
+- If adding a book fails, an error message is shown below the add book form.
+- If an action (e.g., check-in, check-out, delete) fails, an error message is displayed in the appropriate context.
+
+### Styling
+
+The application uses simple CSS styles defined in the base.html template. Key styles include:
+- A clean and minimalistic table layout.
+- Error messages styled in red for visibility.
+- Responsive design for better usability on different screen sizes.
+
+### Future Enhancements
+
+- Add pagination for the book list and checkout log.
+- Implement search and filtering for books.
+- Enhance error handling with more detailed messages.
+
 ## Included Dependencies
 
 Thank you to the talented engineers who provide and maintain their work for free!
