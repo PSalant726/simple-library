@@ -2,6 +2,7 @@ package library_server
 
 import (
 	"testing"
+	"time"
 
 	db "github.com/PSalant726/simple-library/db/sqlc"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +23,18 @@ func TestBook(t *testing.T) {
 	})
 }
 
+func TestBookEvent(t *testing.T) {
+	t.Run("includes all fields present in the corresponding database model", func(t *testing.T) {
+		actual, expected := *new(BookEvent), *new(db.BookEvent)
+		assert.Exactly(t, expected.ID, actual.ID)
+		assert.Exactly(t, expected.BookID, actual.BookID)
+		assert.Exactly(t, expected.Action, actual.Action)
+		assert.Exactly(t, expected.Timestamp, actual.Timestamp)
+		assert.Exactly(t, expected.CreatedAt, actual.CreatedAt)
+		assert.Exactly(t, expected.UpdatedAt, actual.UpdatedAt)
+	})
+}
+
 func TestUpdateBookRequest(t *testing.T) {
 	t.Run("includes all fields necessary to handle an update request", func(t *testing.T) {
 		actual := *new(UpdateBookRequest)
@@ -30,5 +43,15 @@ func TestUpdateBookRequest(t *testing.T) {
 		assert.IsType(t, "", actual.Title)
 		assert.IsType(t, "", actual.Author)
 		assert.IsType(t, "", actual.Description)
+	})
+}
+
+func TestUpdateBookEventRequest(t *testing.T) {
+	t.Run("includes all fields necessary to handle an update request", func(t *testing.T) {
+		actual := *new(UpdateBookEventRequest)
+		assert.IsType(t, int64(0), actual.ID)
+		assert.IsType(t, int64(0), actual.BookID)
+		assert.IsType(t, "", actual.Action)
+		assert.IsType(t, time.Time{}, actual.Timestamp)
 	})
 }

@@ -91,5 +91,6 @@ func (s *Server) Stop(idleConnsChan chan struct{}) error {
 func (s *Server) addRoutes() {
 	mux := http.NewServeMux()
 	s.addBooksRoutes(mux)
+	s.addBookEventsRoutes(mux)
 	s.Server.Handler = assignRequestID(logRequests(mux))
 }

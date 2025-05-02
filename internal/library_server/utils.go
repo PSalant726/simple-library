@@ -36,6 +36,23 @@ func handleSQLiteBookError(w http.ResponseWriter, err *sqlite.Error, book Book) 
 	respondWithJSON(w, http.StatusBadRequest, resp)
 }
 
+func handleSQLiteBookEventError(w http.ResponseWriter, err *sqlite.Error, bookEvent BookEvent) {
+	var resp Response
+
+	switch err.Code() {
+	case sqlite3.SQLITE_CONSTRAINT_CHECK:
+		resp.Data = json.RawMessage(fmt.Sprintf(
+			`{"book_id": %d, "action": %q}`,
+			bookEvent.BookID, bookEvent.Action,
+		))
+		resp.Message = "Book ID must not be zero. Action must be either 'checkin' or 'checkout'."
+	case sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY:
+		resp.Message = fmt.Sprintf("Book with ID %d not found.", bookEvent.BookID)
+	}
+
+	respondWithJSON(w, http.StatusBadRequest, resp)
+}
+
 func respondWithJSON(w http.ResponseWriter, statusCode int, body Response) {
 	w.Header().Set(headerKeyContentType, headerValueApplicationJSON)
 	w.WriteHeader(statusCode)

@@ -23,6 +23,15 @@ type Book struct {
 	ArchivedAt   sql.NullTime   `json:"archived_at"`
 }
 
+type BookEvent struct {
+	ID        int64     `json:"id"`
+	BookID    int64     `json:"book_id"`
+	Action    string    `json:"action"`
+	Timestamp time.Time `json:"timestamp"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type Response struct {
 	Data    json.RawMessage `json:"data,omitempty"`
 	Message string          `json:"message"`
@@ -34,4 +43,11 @@ type UpdateBookRequest struct {
 	Title       string `json:"title"`
 	Author      string `json:"author"`
 	Description string `json:"description"`
+}
+
+type UpdateBookEventRequest struct {
+	ID        int64     `json:"id"`
+	BookID    int64     `json:"book_id"`
+	Action    string    `json:"action"`
+	Timestamp time.Time `json:"timestamp"`
 }
