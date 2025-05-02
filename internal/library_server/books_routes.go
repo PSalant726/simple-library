@@ -25,8 +25,8 @@ const (
 
 var (
 	endpointArchiveBook  = fmt.Sprintf("%s %s/archive", http.MethodPatch, routeBooks)
-	endpointCheckInBook  = fmt.Sprintf("%s %s/check-in/{id}", http.MethodPatch, routeBooks)
-	endpointCheckOutBook = fmt.Sprintf("%s %s/check-out/{id}", http.MethodPatch, routeBooks)
+	endpointCheckInBook  = fmt.Sprintf("%s %s/{id}/check-in", http.MethodPatch, routeBooks)
+	endpointCheckOutBook = fmt.Sprintf("%s %s/{id}/check-out", http.MethodPatch, routeBooks)
 	endpointCreateBook   = fmt.Sprintf("%s %s", http.MethodPost, routeBooks)
 	endpointDeleteBook   = fmt.Sprintf("%s %s/{id}", http.MethodDelete, routeBooks)
 	endpointGetBook      = fmt.Sprintf("%s %s/{id}", http.MethodGet, routeBooks)

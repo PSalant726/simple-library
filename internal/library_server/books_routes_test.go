@@ -344,7 +344,7 @@ func TestServer_handleCheckInBook(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			req := httptest.NewRequest(
 				http.MethodPatch,
-				fmt.Sprintf("%s/check-in/%s", routeBooks, test.bookID),
+				fmt.Sprintf("%s/%s/check-in", routeBooks, test.bookID),
 				nil,
 			)
 			req.SetPathValue("id", test.bookID)
@@ -430,7 +430,7 @@ func TestServer_handleCheckOutBook(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 			req := httptest.NewRequest(
 				http.MethodPatch,
-				fmt.Sprintf("%s/check-out/%s", routeBooks, test.bookID),
+				fmt.Sprintf("%s/%s/check-out", routeBooks, test.bookID),
 				nil,
 			)
 			req.SetPathValue("id", test.bookID)
