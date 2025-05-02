@@ -24,6 +24,17 @@ WHERE book_id = ?1
 ORDER BY timestamp DESC;
 --
 
+-- name: CheckOutLog :many
+SELECT books.title,
+    books.author,
+    books.isbn,
+    book_events.action,
+    book_events.timestamp
+FROM book_events
+    INNER JOIN books ON book_events.book_id = books.id
+ORDER BY book_events.timestamp DESC;
+--
+
 -- name: UpdateBookEvent :one
 UPDATE book_events
 SET book_id = (

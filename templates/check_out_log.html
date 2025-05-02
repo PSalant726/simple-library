@@ -1,0 +1,28 @@
+{{define "content"}}
+<h1>Checkout Log</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>ISBN</th>
+            <th>Action</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .CheckOutLog}}
+        <tr>
+            <td>{{.Title}}</td>
+            <td>{{.Author}}</td>
+            <td>{{.Isbn}}</td>
+            <td>{{.Action | formatAction}}</td>
+            <td>{{.Timestamp | formatTimestamp}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{end}}
+
+{{template "base.html" .}}

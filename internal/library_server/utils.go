@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -20,7 +21,26 @@ const (
 	headerValueTextHTML        = "text/html"
 
 	maxRequestBodySize = 1 << 20 // 1 MB
+
+	prettyCheckedIn       = "Checked In"
+	prettyCheckedOut      = "Checked Out"
+	prettyTimestampFormat = "Jan 2, 2006 at 3:04 PM"
 )
+
+func formatAction(action string) string {
+	switch action {
+	case bookActionCheckIn:
+		return prettyCheckedIn
+	case bookActionCheckOut:
+		return prettyCheckedOut
+	default:
+		return action
+	}
+}
+
+func formatTimestamp(t time.Time) string {
+	return t.Local().Format(prettyTimestampFormat)
+}
 
 func handleSQLiteBookError(w http.ResponseWriter, err *sqlite.Error, book Book) {
 	var resp Response

@@ -107,6 +107,55 @@ func (q *Queries) BookEventsByBookID(ctx context.Context, bookID int64) ([]BookE
 	return items, nil
 }
 
+const checkOutLog = `-- name: CheckOutLog :many
+
+SELECT books.title,
+    books.author,
+    books.isbn,
+    book_events.action,
+    book_events.timestamp
+FROM book_events
+    INNER JOIN books ON book_events.book_id = books.id
+ORDER BY book_events.timestamp DESC
+`
+
+type CheckOutLogRow struct {
+	Title     string    `json:"title"`
+	Author    string    `json:"author"`
+	Isbn      string    `json:"isbn"`
+	Action    string    `json:"action"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func (q *Queries) CheckOutLog(ctx context.Context) ([]CheckOutLogRow, error) {
+	rows, err := q.db.QueryContext(ctx, checkOutLog)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CheckOutLogRow
+	for rows.Next() {
+		var i CheckOutLogRow
+		if err := rows.Scan(
+			&i.Title,
+			&i.Author,
+			&i.Isbn,
+			&i.Action,
+			&i.Timestamp,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createBookEvent = `-- name: CreateBookEvent :one
 INSERT INTO book_events (book_id, action, timestamp)
 VALUES (?1, ?2, ?3)

@@ -15,7 +15,10 @@ import (
 	"modernc.org/sqlite"
 )
 
-const routeUIBooks = "/ui/books"
+const (
+	routeUIBooks       = "/ui/books"
+	routeUICheckOutLog = "/check-out-log"
+)
 
 var (
 	endpointIndex          = http.MethodGet + " /"
@@ -23,6 +26,7 @@ var (
 	endpointUICheckInBook  = fmt.Sprintf("%s %s/{id}/check-in", http.MethodPatch, routeUIBooks)
 	endpointUICheckOutBook = fmt.Sprintf("%s %s/{id}/check-out", http.MethodPatch, routeUIBooks)
 	endpointUIDeleteBook   = fmt.Sprintf("%s %s/{id}", http.MethodDelete, routeUIBooks)
+	endpointUICheckOutLog  = fmt.Sprintf("%s %s", http.MethodGet, routeUICheckOutLog)
 )
 
 func (s *Server) addFrontEndRoutes(mux *http.ServeMux) {
@@ -31,6 +35,7 @@ func (s *Server) addFrontEndRoutes(mux *http.ServeMux) {
 	mux.HandleFunc(endpointUICheckInBook, s.handleUICheckInBook)
 	mux.HandleFunc(endpointUICheckOutBook, s.handleUICheckOutBook)
 	mux.HandleFunc(endpointUIDeleteBook, s.handleUIDeleteBook)
+	mux.HandleFunc(endpointUICheckOutLog, s.handleUICheckOutLog)
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -472,4 +477,58 @@ func (s *Server) handleUIDeleteBook(w http.ResponseWriter, r *http.Request) {
 	cancel()
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleUICheckOutLog(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), defaultDBTimeout)
+	results, err := s.libraryDB.CheckOutLog(ctx)
+	if err != nil {
+		s.logger.Error(
+			"Failed to fetch check-out log",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	cancel()
+
+	tmpl, err := template.
+		New("check_out_log.html").
+		Funcs(template.FuncMap{
+			"formatAction":    formatAction,
+			"formatTimestamp": formatTimestamp,
+		}).
+		ParseFiles(
+			"templates/check_out_log.html",
+			"templates/base.html",
+		)
+	if err != nil {
+		s.logger.Error(
+			"Failed to parse template",
+			"request_id", r.Context().Value(requestID),
+			"template", tmpl.Name,
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		return
+	}
+
+	if err := tmpl.Execute(w, map[string]any{"CheckOutLog": results}); err != nil {
+		s.logger.Error(
+			"Failed to execute template",
+			"request_id", r.Context().Value(requestID),
+			"template", tmpl.Name,
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		return
+	}
 }
