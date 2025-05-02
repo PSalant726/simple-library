@@ -10,24 +10,34 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	db "github.com/PSalant726/simple-library/db/sqlc"
 	"modernc.org/sqlite"
 )
 
-const routeBooks = "/books"
+const (
+	bookActionCheckIn  = "checkin"
+	bookActionCheckOut = "checkout"
+
+	routeBooks = "/books"
+)
 
 var (
-	endpointArchiveBook = fmt.Sprintf("%s %s/archive", http.MethodPatch, routeBooks)
-	endpointCreateBook  = fmt.Sprintf("%s %s", http.MethodPost, routeBooks)
-	endpointDeleteBook  = fmt.Sprintf("%s %s/{id}", http.MethodDelete, routeBooks)
-	endpointGetBook     = fmt.Sprintf("%s %s/{id}", http.MethodGet, routeBooks)
-	endpointListBooks   = fmt.Sprintf("%s %s", http.MethodGet, routeBooks)
-	endpointUpdateBook  = fmt.Sprintf("%s %s", http.MethodPut, routeBooks)
+	endpointArchiveBook  = fmt.Sprintf("%s %s/archive", http.MethodPatch, routeBooks)
+	endpointCheckInBook  = fmt.Sprintf("%s %s/check-in/{id}", http.MethodPatch, routeBooks)
+	endpointCheckOutBook = fmt.Sprintf("%s %s/check-out/{id}", http.MethodPatch, routeBooks)
+	endpointCreateBook   = fmt.Sprintf("%s %s", http.MethodPost, routeBooks)
+	endpointDeleteBook   = fmt.Sprintf("%s %s/{id}", http.MethodDelete, routeBooks)
+	endpointGetBook      = fmt.Sprintf("%s %s/{id}", http.MethodGet, routeBooks)
+	endpointListBooks    = fmt.Sprintf("%s %s", http.MethodGet, routeBooks)
+	endpointUpdateBook   = fmt.Sprintf("%s %s", http.MethodPut, routeBooks)
 )
 
 func (s *Server) addBooksRoutes(mux *http.ServeMux) {
 	mux.HandleFunc(endpointArchiveBook, s.handleArchiveBook)
+	mux.HandleFunc(endpointCheckInBook, s.handleCheckInBook)
+	mux.HandleFunc(endpointCheckOutBook, s.handleCheckOutBook)
 	mux.HandleFunc(endpointCreateBook, s.handleCreateBook)
 	mux.HandleFunc(endpointDeleteBook, s.handleDeleteBook)
 	mux.HandleFunc(endpointGetBook, s.handleGetBook)
@@ -102,6 +112,241 @@ func (s *Server) handleArchiveBook(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, Response{
 		Data:    jsonResult,
 		Message: "Book archived.",
+	})
+}
+
+func (s *Server) handleCheckInBook(w http.ResponseWriter, r *http.Request) {
+	bookID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		s.logger.Warn(
+			"Invalid id value",
+			"id", r.PathValue("id"),
+			"request_id", r.Context().Value(requestID),
+		)
+		respondWithJSON(w, http.StatusBadRequest, Response{
+			Message: "Invalid book ID. Must be an integer.",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), defaultDBTimeout)
+	tx, err := s.libraryDB.DB.BeginTx(ctx, nil)
+	if err != nil {
+		s.logger.Error(
+			"Failed to begin database transaction",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	defer tx.Rollback()
+
+	checkinTx := s.libraryDB.WithTx(tx)
+
+	result, err := checkinTx.CheckInBook(ctx, bookID)
+	if errors.Is(err, sql.ErrNoRows) {
+		respondWithJSON(w, http.StatusNotFound, Response{
+			Message: fmt.Sprintf("Book with ID %d not found.", bookID),
+		})
+		cancel()
+		return
+	}
+	if err != nil {
+		s.logger.Error(
+			"Failed to check-in book",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+
+	if _, err := checkinTx.CreateBookEvent(ctx, db.CreateBookEventParams{
+		BookID:    bookID,
+		Action:    bookActionCheckIn,
+		Timestamp: time.Now().UTC(),
+	}); err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			s.logger.Warn(
+				"Failed to check-in book",
+				"request_id", r.Context().Value(requestID),
+				"error", sqliteErr,
+			)
+			handleSQLiteBookError(w, sqliteErr, Book{ID: bookID})
+			cancel()
+			return
+		}
+
+		s.logger.Error(
+			"Failed to check-in book",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		s.logger.Error(
+			"Failed to commit database transaction",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	cancel()
+
+	jsonResult, err := json.Marshal(result)
+	if err != nil {
+		s.logger.Error(
+			"Failed to marshal book as JSON",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, Response{
+		Data:    jsonResult,
+		Message: "Book checked in.",
+	})
+}
+
+func (s *Server) handleCheckOutBook(w http.ResponseWriter, r *http.Request) {
+	bookID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		s.logger.Warn(
+			"Invalid id value",
+			"id", r.PathValue("id"),
+			"request_id", r.Context().Value(requestID),
+		)
+		respondWithJSON(w, http.StatusBadRequest, Response{
+			Message: "Invalid book ID. Must be an integer.",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), defaultDBTimeout)
+	tx, err := s.libraryDB.DB.BeginTx(ctx, nil)
+	if err != nil {
+		s.logger.Error(
+			"Failed to begin database transaction",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	defer tx.Rollback()
+
+	checkoutTx := s.libraryDB.WithTx(tx)
+
+	now := time.Now().UTC()
+	result, err := checkoutTx.CheckOutBook(ctx, db.CheckOutBookParams{
+		ID: bookID,
+		CheckedOutAt: sql.NullTime{
+			Time:  now,
+			Valid: true,
+		},
+	})
+	if errors.Is(err, sql.ErrNoRows) {
+		respondWithJSON(w, http.StatusNotFound, Response{
+			Message: fmt.Sprintf("Book with ID %d not found.", bookID),
+		})
+		cancel()
+		return
+	}
+	if err != nil {
+		s.logger.Error(
+			"Failed to check-out book",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+
+	if _, err := checkoutTx.CreateBookEvent(ctx, db.CreateBookEventParams{
+		BookID:    bookID,
+		Action:    bookActionCheckOut,
+		Timestamp: now,
+	}); err != nil {
+		var sqliteErr *sqlite.Error
+		if errors.As(err, &sqliteErr) {
+			s.logger.Warn(
+				"Failed to check-out book",
+				"request_id", r.Context().Value(requestID),
+				"error", sqliteErr,
+			)
+			handleSQLiteBookError(w, sqliteErr, Book{ID: bookID})
+			cancel()
+			return
+		}
+
+		s.logger.Error(
+			"Failed to check-out book",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		s.logger.Error(
+			"Failed to commit database transaction",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		cancel()
+		return
+	}
+	cancel()
+
+	jsonResult, err := json.Marshal(result)
+	if err != nil {
+		s.logger.Error(
+			"Failed to marshal book as JSON",
+			"request_id", r.Context().Value(requestID),
+			"error", err,
+		)
+		respondWithJSON(w, http.StatusInternalServerError, Response{
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, Response{
+		Data:    jsonResult,
+		Message: "Book checked out.",
 	})
 }
 

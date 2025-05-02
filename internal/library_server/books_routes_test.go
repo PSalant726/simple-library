@@ -313,6 +313,169 @@ func TestServer_handleCreateBook(t *testing.T) {
 	})
 }
 
+func TestServer_handleCheckInBook(t *testing.T) {
+	tests := []struct {
+		description        string
+		bookID             string
+		expectedMessage    string
+		expectedStatusCode int
+	}{
+		{
+			description:        "with an existing book ID",
+			bookID:             "1",
+			expectedMessage:    "Book checked in.",
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			description:        "with a book ID that does not exist",
+			bookID:             "1000000",
+			expectedMessage:    "Book with ID 1000000 not found.",
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			description:        "with an invalid book ID value",
+			bookID:             "foo",
+			expectedMessage:    "Invalid book ID. Must be an integer.",
+			expectedStatusCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			req := httptest.NewRequest(
+				http.MethodPatch,
+				fmt.Sprintf("%s/check-in/%s", routeBooks, test.bookID),
+				nil,
+			)
+			req.SetPathValue("id", test.bookID)
+			w := httptest.NewRecorder()
+
+			withStartedTestServer(t, func(s *Server) {
+				body, err := json.Marshal(Book{
+					Isbn:   util.RandomString(10),
+					Title:  util.RandomString(10),
+					Author: util.RandomString(10),
+				})
+				require.Nil(t, err)
+
+				s.handleCreateBook(
+					httptest.NewRecorder(),
+					httptest.NewRequest(http.MethodPost, routeBooks, bytes.NewBuffer(body)),
+				)
+
+				s.handleCheckOutBook(
+					httptest.NewRecorder(),
+					httptest.NewRequest(
+						http.MethodPatch,
+						fmt.Sprintf("%s/check-out/1", routeBooks),
+						nil,
+					),
+				)
+
+				s.handleCheckInBook(w, req)
+			})
+
+			t.Run("responds with the expected status code", func(t *testing.T) {
+				assert.Equal(t, test.expectedStatusCode, w.Code)
+			})
+
+			t.Run("responds with valid JSON", func(t *testing.T) {
+				var resp Response
+				assert.Nil(t, json.Unmarshal(w.Body.Bytes(), &resp))
+
+				t.Run("with the expected content", func(t *testing.T) {
+					assert.Equal(t, test.expectedMessage, resp.Message)
+
+					if resp.Data != nil {
+						var respBook Book
+						require.Nil(t, json.Unmarshal(resp.Data, &respBook))
+
+						assert.Zero(t, respBook.CheckedOutAt.Time)
+						assert.False(t, respBook.CheckedOutAt.Valid)
+					}
+				})
+			})
+		})
+	}
+}
+
+func TestServer_handleCheckOutBook(t *testing.T) {
+	tests := []struct {
+		description        string
+		bookID             string
+		expectedMessage    string
+		expectedStatusCode int
+	}{
+		{
+			description:        "with an existing book ID",
+			bookID:             "1",
+			expectedMessage:    "Book checked out.",
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			description:        "with a book ID that does not exist",
+			bookID:             "1000000",
+			expectedMessage:    "Book with ID 1000000 not found.",
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			description:        "with an invalid book ID value",
+			bookID:             "foo",
+			expectedMessage:    "Invalid book ID. Must be an integer.",
+			expectedStatusCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			req := httptest.NewRequest(
+				http.MethodPatch,
+				fmt.Sprintf("%s/check-out/%s", routeBooks, test.bookID),
+				nil,
+			)
+			req.SetPathValue("id", test.bookID)
+			w := httptest.NewRecorder()
+
+			withStartedTestServer(t, func(s *Server) {
+				body, err := json.Marshal(Book{
+					Isbn:   util.RandomString(10),
+					Title:  util.RandomString(10),
+					Author: util.RandomString(10),
+				})
+				require.Nil(t, err)
+
+				s.handleCreateBook(
+					httptest.NewRecorder(),
+					httptest.NewRequest(http.MethodPost, routeBooks, bytes.NewBuffer(body)),
+				)
+
+				s.handleCheckOutBook(w, req)
+			})
+
+			t.Run("responds with the expected status code", func(t *testing.T) {
+				assert.Equal(t, test.expectedStatusCode, w.Code)
+			})
+
+			t.Run("responds with valid JSON", func(t *testing.T) {
+				var resp Response
+				assert.Nil(t, json.Unmarshal(w.Body.Bytes(), &resp))
+
+				t.Run("with the expected content", func(t *testing.T) {
+					assert.Equal(t, test.expectedMessage, resp.Message)
+
+					if resp.Data != nil {
+						var respBook Book
+						require.Nil(t, json.Unmarshal(resp.Data, &respBook))
+
+						assert.NotZero(t, respBook.CheckedOutAt.Time)
+						assert.True(t, respBook.CheckedOutAt.Valid)
+					}
+				})
+			})
+		})
+	}
+}
+
 func TestServer_handleDeleteBook(t *testing.T) {
 	tests := []struct {
 		description        string
