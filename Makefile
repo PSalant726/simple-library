@@ -1,3 +1,6 @@
+build:
+	go build -o ./bin/library ./cmd/library/...
+
 migrate-down:
 	migrate down -all
 
@@ -14,4 +17,4 @@ sqlc:
 test:
 	go test -count=1 -cover -race ./...
 
-.PHONY: migrate-down migrate-up migration sqlc test
+.PHONY: build migrate-down migrate-up migration sqlc test
